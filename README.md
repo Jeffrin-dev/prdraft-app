@@ -1,6 +1,6 @@
 # PRDraft
 
-> Auto-generate PR descriptions from your diff.
+> Auto-generate PR descriptions from your diff. yes
 
 A GitHub App that reads what actually changed in your pull 
 request and writes a structured description automatically.
