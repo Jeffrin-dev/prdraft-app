@@ -1,6 +1,6 @@
 import { App } from '@octokit/app'
 import { createClient } from '@supabase/supabase-js'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import Groq from 'groq-sdk'
 
 const app = new App({
   appId: process.env.GITHUB_APP_ID!,
@@ -15,11 +15,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 async function generatePRDescription(diff: string, prTitle: string): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
-
   const prompt = `You are a senior software engineer writing a pull request description.
 Analyze this diff and write a clear, structured PR description.
 
@@ -48,8 +46,12 @@ Rules:
 - Do not say "this PR" or "this commit"
 - Keep it under 200 words total`
 
-  const result = await model.generateContent(prompt)
-  return result.response.text()
+  const result = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 500,
+  })
+  return result.choices[0]?.message?.content ?? ''
 }
 
 export async function POST(req: Request) {
