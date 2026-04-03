@@ -18,7 +18,7 @@ const supabase = createClient(
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 async function generatePRDescription(diff: string, prTitle: string): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
   const prompt = `You are a senior software engineer writing a pull request description.
 Analyze this diff and write a clear, structured PR description.
