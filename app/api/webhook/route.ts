@@ -18,11 +18,7 @@ const supabase = createClient(
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 async function generatePRDescription(diff: string, prTitle: string): Promise<string> {
-  const result = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages: [{ role: 'user', content: prompt }],
-    max_tokens: 500,
-  })
+  const prompt = `You are a senior software engineer writing a pull request description.
 Analyze this diff and write a clear, structured PR description.
 
 PR Title: ${prTitle}
@@ -50,8 +46,12 @@ Rules:
 - Do not say "this PR" or "this commit"
 - Keep it under 200 words total`
 
-  const result = await model.generateContent(prompt)
-  return result.response.text()
+  const result = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 500,
+  })
+  return result.choices[0]?.message?.content ?? ''
 }
 
 export async function POST(req: Request) {
