@@ -17,6 +17,10 @@ const supabase = createClient(
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
+export async function GET() {
+  return Response.json({ ok: true, status: 'PRDraft webhook is live' })
+}
+
 async function generatePRDescription(diff: string, prTitle: string): Promise<string> {
   const prompt = `You are a senior software engineer writing a pull request description.
 Analyze this diff and write a clear, structured PR description.
