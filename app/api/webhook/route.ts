@@ -77,10 +77,40 @@ export async function POST(req: Request) {
 
   const payload = JSON.parse(body)
 
-  if (event !== 'pull_request' || payload.action !== 'opened') {
+  if (event !== 'pull_request' && event !== 'installation') {
     return Response.json({ ok: true, skipped: true })
   }
+  
+  if (event === 'installation') {
+    const installationId = payload.installation?.id
+    const accountLogin = payload.installation?.account?.login ?? 'unknown'
+    const accountType = payload.installation?.account?.type ?? 'User'
 
+    if (payload.action === 'created') {
+      await supabase.from('installs').upsert({
+        installation_id: installationId,
+        account_login: accountLogin,
+        account_type: accountType,
+        plan: 'free',
+        pr_count: 0,
+        status: 'active',
+        installed_at: new Date().toISOString(),
+        uninstalled_at: null,
+      })
+      console.log(`New install: ${accountLogin}`)
+      return Response.json({ ok: true, event: 'installed' })
+    }
+
+    if (payload.action === 'deleted') {
+      await supabase.from('installs').update({
+        status: 'uninstalled',
+        uninstalled_at: new Date().toISOString(),
+      }).eq('installation_id', installationId)
+      console.log(`Uninstall: ${accountLogin}`)
+      return Response.json({ ok: true, event: 'uninstalled' })
+    }
+  }
+  
   const installationId = payload.installation?.id
   const repoFullName = payload.repository?.full_name
   const prNumber = payload.pull_request?.number
