@@ -97,17 +97,22 @@ export async function POST(req: Request) {
       .eq('installation_id', installationId)
       .single()
 
+    const currentCount = install?.pr_count ?? 0
+    const plan = install?.plan ?? 'free'
+
+    if (plan === 'free' && currentCount >= 5) {
+      console.log(`Free tier cap hit for installation ${installationId}`)
+      return Response.json({ ok: true, capped: true })
+    }
+
+// Only increment AFTER cap check passes
     await supabase.from('installs').upsert({
       installation_id: installationId,
       account_login: payload.installation?.account?.login ?? 'unknown',
       account_type: payload.installation?.account?.type ?? 'User',
-      pr_count: (install?.pr_count ?? 0) + 1,
+      plan: plan,
+      pr_count: currentCount + 1,
     })
-
-    if (install && install.plan === 'free' && install.pr_count >= 5) {
-      console.log(`Free tier cap hit for installation ${installationId}`)
-      return Response.json({ ok: true, capped: true })
-    }
 
     const octokit = await app.getInstallationOctokit(installationId)
 
