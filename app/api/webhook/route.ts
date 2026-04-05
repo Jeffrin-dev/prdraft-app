@@ -134,15 +134,31 @@ export async function POST(req: Request) {
       console.log(`Free tier cap hit for installation ${installationId}`)
       return Response.json({ ok: true, capped: true })
     }
+    
+    
+    // Check cap BEFORE incrementing
+    if (plan === 'free' && currentCount >= 5) {
+      console.log(`Free tier cap hit for installation ${installationId}`)
+      return Response.json({ ok: true, capped: true })
+    }
 
-// Only increment AFTER cap check passes
-    await supabase.from('installs').upsert({
-      installation_id: installationId,
-      account_login: payload.installation?.account?.login ?? 'unknown',
-      account_type: payload.installation?.account?.type ?? 'User',
-      plan: plan,
-      pr_count: currentCount + 1,
-    })
+    // Check if this PR was already processed
+    const { data: existing } = await supabase
+      .from('pr_events')
+      .select('id')
+      .eq('installation_id', installationId)
+      .eq('pr_number', prNumber)
+      .single()
+
+    if (existing) {
+      return Response.json({ ok: true, skipped: 'already processed' })
+    }
+
+    // Only increment AFTER cap check passes
+    await supabase
+      .from('installs')
+      .update({ pr_count: currentCount + 1 })
+      .eq('installation_id', installationId)
 
     const octokit = await app.getInstallationOctokit(installationId)
 
@@ -174,11 +190,14 @@ export async function POST(req: Request) {
       }
     )
 
-    await supabase.from('pr_events').insert({
-      installation_id: installationId,
-      repo_full_name: repoFullName,
-      pr_number: prNumber,
-    })
+    await supabase.from('pr_events').upsert(
+      {
+        installation_id: installationId,
+        repo_full_name: repoFullName,
+        pr_number: prNumber,
+      },
+      { onConflict: 'installation_id,pr_number', ignoreDuplicates: true }
+    )
 
     console.log(`✅ Generated description for ${repoFullName}#${prNumber}`)
     return Response.json({ ok: true })
