@@ -52,3 +52,6 @@ GROQ_API_KEY=
 ## Landing page
 
 [prdraft.carrd.co](https://prdraft.carrd.co)
+
+## Dashboard
+After installing, view your usage and plan at [prdraft-app.vercel.app/dashboard](https://prdraft-app.vercel.app/dashboard?installation_id=YOUR_ID)
