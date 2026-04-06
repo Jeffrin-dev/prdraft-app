@@ -1,42 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PRDraft
 
-## Getting Started
+A GitHub App that reads your PR diff and auto-writes a structured pull request description — 2-click install, zero config.
 
-First, run the development server:
+## What it does
+
+When you open a pull request, PRDraft:
+1. Reads your diff via the GitHub API
+2. Sends it to Groq (llama-3.3-70b-versatile) for analysis
+3. Posts a structured PR description automatically
+
+No CLI. No YAML config. No API keys to manage.
+
+## Free tier
+
+5 PR descriptions/month — no credit card required.
+
+Install at: [github.com/apps/prdraft](https://github.com/apps/prdraft)
+
+## Tech stack
+
+- **Frontend & Backend:** Next.js (App Router)
+- **Database:** Supabase (PostgreSQL)
+- **AI Engine:** Groq API (llama-3.3-70b-versatile)
+- **GitHub Integration:** Octokit
+- **Hosting:** Vercel
+
+## Local development
 
 ```bash
+# Install dependencies
+npm install
+
+# Terminal 1 — webhook tunnel
+smee --url https://smee.io/HiyCyQaGwhDna09 --path /api/webhook --port 3000
+
+# Terminal 2 — Next.js dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+GITHUB_APP_ID=
+GITHUB_PRIVATE_KEY=
+GITHUB_WEBHOOK_SECRET=
+NEXT_PUBLIC_SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+GROQ_API_KEY=
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Landing page
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-// prdraft webhook test
-// prdraft webhook test v2
-// webhook test
-local test Friday 03 April 2026 09:36:33 PM IST
-local test Friday 03 April 2026 09:44:41 PM IST
-vercel live test Saturday 04 April 2026 10:37:54 PM IST
+[prdraft.carrd.co](https://prdraft.carrd.co)
