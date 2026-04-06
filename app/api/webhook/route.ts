@@ -132,6 +132,13 @@ export async function POST(req: Request) {
 
     if (plan === 'free' && currentCount >= 5) {
       console.log(`Free tier cap hit for installation ${installationId}`)
+      const octokit = await app.getInstallationOctokit(installationId)
+      await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
+        owner: repoFullName.split('/')[0],
+        repo: repoFullName.split('/')[1],
+        issue_number: prNumber,
+        body: `**PRDraft free tier limit reached** (5 PRs/month).\n\nUpgrade to Pro for unlimited PR descriptions → [prdraft.carrd.co](https://prdraft.carrd.co)`,
+      })
       return Response.json({ ok: true, capped: true })
     }
     
