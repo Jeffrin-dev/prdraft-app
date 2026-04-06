@@ -32,7 +32,7 @@ type PREvent = {
   repo_full_name: string
   pr_number: number
   pr_title: string | null
-  created_at: string
+  generated_at: string
 }
 
 // ─── Supabase (server-side only — uses service role key) ─────────────────────
@@ -306,7 +306,7 @@ function Dashboard({
                    <span style={styles.prNumber}>#{pr.pr_number}</span>
                  </span>
                  <span style={{ ...styles.colTime, color: '#64748b' }}>
-                   {timeAgo(pr.created_at)}
+                   {timeAgo(pr.generated_at)}
                  </span>
                </a>
             ))}
@@ -863,7 +863,7 @@ export default async function DashboardPage({
     .from('pr_events')
     .select('*')
     .eq('installation_id', installationId)
-    .order('created_at', { ascending: false })
+    .order('generated_at', { ascending: false })
     .limit(10)
 
   return <Dashboard install={install} recentPRs={recentPRs ?? []} />
