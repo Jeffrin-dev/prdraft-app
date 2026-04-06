@@ -210,6 +210,7 @@ export async function POST(req: Request) {
         installation_id: installationId,
         repo_full_name: repoFullName,
         pr_number: prNumber,
+        pr_title: prTitle,
       },
       { onConflict: 'installation_id,pr_number', ignoreDuplicates: true }
     )
