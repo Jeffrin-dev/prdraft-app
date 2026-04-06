@@ -31,6 +31,7 @@ type PREvent = {
   installation_id: number
   repo_full_name: string
   pr_number: number
+  pr_title: string | null
   created_at: string
 }
 
@@ -289,18 +290,25 @@ function Dashboard({
                 target="_blank"
                 rel="noopener noreferrer"
                 style={styles.tableRow}
-              >
+               >
                 <span style={styles.colRepo}>
                   <span style={styles.repoIcon}>◈</span>
-                  {pr.repo_full_name}
-                </span>
-                <span style={styles.colPR}>
-                  <span style={styles.prNumber}>#{pr.pr_number}</span>
-                </span>
-                <span style={{ ...styles.colTime, color: '#64748b' }}>
-                  {timeAgo(pr.created_at)}
-                </span>
-              </a>
+                  <span>
+                    <span>{pr.repo_full_name}</span>
+                    {pr.pr_title && (
+                      <span style={{ display: 'block', fontSize: 11, color: '#475569', marginTop: 2 }}>
+                        {pr.pr_title}
+                      </span>
+                    )}
+                  </span>
+                 </span>
+                 <span style={styles.colPR}>
+                   <span style={styles.prNumber}>#{pr.pr_number}</span>
+                 </span>
+                 <span style={{ ...styles.colTime, color: '#64748b' }}>
+                   {timeAgo(pr.created_at)}
+                 </span>
+               </a>
             ))}
           </div>
         )}
