@@ -57,3 +57,5 @@ GROQ_API_KEY=
 After installing, view your usage and plan at [prdraft-app.vercel.app/dashboard](https://prdraft-app.vercel.app/dashboard?installation_id=YOUR_ID)
 
 Recent activity now shows PR titles.
+
+Recent activity now shows PR titles.
