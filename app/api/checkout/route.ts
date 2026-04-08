@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const installationId = req.nextUrl.searchParams.get('installation_id')
 
   if (!installationId) {
-    return NextResponse.json({ error: 'Missing installation_id' }, { status: 400 })
+    return NextResponse.redirect('https://github.com/apps/prdraft')
   }
 
   try {
