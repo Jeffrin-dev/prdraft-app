@@ -31,20 +31,8 @@ export default function RefundPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 32, fontSize: 15, lineHeight: 1.7, color: '#94a3b8' }}>
 
             <section>
-              <h2 style={{ fontSize: 18, fontWeight: 600, color: '#e2e8f0', marginBottom: 12 }}>General policy</h2>
-              <p>PRDraft subscriptions are non-refundable. Because the Service is digital and access is granted immediately upon payment, we do not offer refunds based on dissatisfaction, change of mind, or unused portion of a billing period.</p>
-            </section>
-
-            <section>
-              <h2 style={{ fontSize: 18, fontWeight: 600, color: '#e2e8f0', marginBottom: 12 }}>Refunds for verified technical issues</h2>
-              <p>A refund may be granted at our discretion if a verified technical problem on our end prevents the Service from functioning as described — for example, if PRDraft fails to generate descriptions for all PRs during your billing period due to a bug or outage caused by us.</p>
-              <p style={{ marginTop: 12 }}>To request a refund under this policy, email <a href="mailto:merinjeffrin0@gmail.com">merinjeffrin0@gmail.com</a> with:</p>
-              <ul style={{ marginTop: 12, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <li>Your GitHub account login</li>
-                <li>A description of the issue you experienced</li>
-                <li>The date(s) the issue occurred</li>
-              </ul>
-              <p style={{ marginTop: 12 }}>We will investigate and respond within 5 business days.</p>
+              <h2 style={{ fontSize: 18, fontWeight: 600, color: '#e2e8f0', marginBottom: 12 }}>30-day refund policy</h2>
+              <p>If you are not satisfied with PRDraft for any reason, you may request a full refund within 30 days of your purchase. No questions asked. To request a refund, email <a href="mailto:merinjeffrin0@gmail.com">merinjeffrin0@gmail.com</a> with your GitHub account login and we will process your refund within 5 business days.</p>
             </section>
 
             <section>
