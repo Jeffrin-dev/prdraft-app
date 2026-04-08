@@ -130,6 +130,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             </a>
           </div>
         </header>
+        <script src="https://cdn.paddle.com/paddle/v2/paddle.js" async></script>
         <main style={styles.main}>{children}</main>
         <footer style={styles.footer}>
           <span style={styles.footerText}>
