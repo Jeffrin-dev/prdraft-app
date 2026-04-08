@@ -32,7 +32,7 @@ export default function TermsPage() {
 
             <section>
               <h2 style={{ fontSize: 18, fontWeight: 600, color: '#e2e8f0', marginBottom: 12 }}>1. Acceptance of Terms</h2>
-              <p>By installing or using PRDraft ("the Service"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Service.</p>
+              <p>These Terms of Service are issued by PRDraft ("the Company", "we", "us"). By installing or using PRDraft ("the Service"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Service.</p>
             </section>
 
             <section>
