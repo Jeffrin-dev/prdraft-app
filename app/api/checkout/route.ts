@@ -5,6 +5,7 @@ const PRICE_ID = 'pri_01knnrvdjr8gch5t25ys4st725'
 const PADDLE_BASE = 'https://api.paddle.com'
 
 export async function GET(req: NextRequest) {
+  console.log('🔵 Checkout called', req.nextUrl.searchParams.get('installation_id'))
   const installationId = req.nextUrl.searchParams.get('installation_id')
 
   if (!installationId) {
