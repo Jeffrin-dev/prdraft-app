@@ -151,9 +151,11 @@ function Shell({ children }: { children: React.ReactNode }) {
 function Dashboard({
   install,
   recentPRs,
+  upgraded,
 }: {
   install: Install
   recentPRs: PREvent[]
+  upgraded: boolean
 }) {
   const prCount = install.pr_count ?? 0
   const isPro = install.plan === 'pro'
@@ -170,6 +172,13 @@ function Dashboard({
 
   return (
     <Shell>
+      {/* Upgrade success banner */}
+      {upgraded && (
+        <div style={styles.upgradedBanner}>
+          🎉 You&apos;re now on PRDraft Pro! Unlimited PR descriptions, starting now.
+        </div>
+      )}
+
       {/* Page heading */}
       <div style={styles.pageHeading}>
         <div>
@@ -258,7 +267,7 @@ function Dashboard({
             </p>
           </div>
           <a
-            href={`mailto:merinjeffrin0@gmail.com?subject=PRDraft Pro upgrade&body=Hi, I'd like to upgrade to Pro. My installation: ${install.installation_id} (${install.account_login})`}
+            href={`/api/checkout?installation_id=${install.installation_id}`}
             style={isAtCap ? styles.upgradeButtonUrgent : styles.upgradeButton}
           >
             Upgrade — $9/mo →
@@ -587,6 +596,18 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "'IBM Plex Mono', monospace",
   },
 
+  // Upgrade success banner
+  upgradedBanner: {
+    background: '#052e16',
+    border: '1px solid #166534',
+    borderRadius: 8,
+    padding: '12px 20px',
+    marginBottom: 28,
+    fontSize: 14,
+    color: '#86efac',
+    fontFamily: "'IBM Plex Mono', monospace",
+  },
+
   // Upgrade cards
   upgradeCard: {
     display: 'flex',
@@ -835,10 +856,11 @@ const styles: Record<string, React.CSSProperties> = {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ installation_id?: string }>
+  searchParams: Promise<{ installation_id?: string; upgraded?: string }>
 }) {
   const params = await searchParams
   const rawId = params.installation_id
+  const upgraded = params.upgraded === 'true'
 
   if (!rawId) return <NoInstallation />
 
@@ -866,5 +888,5 @@ export default async function DashboardPage({
     .order('generated_at', { ascending: false })
     .limit(10)
 
-  return <Dashboard install={install} recentPRs={recentPRs ?? []} />
+  return <Dashboard install={install} recentPRs={recentPRs ?? []} upgraded={upgraded} />
 }
