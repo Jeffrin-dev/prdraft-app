@@ -137,7 +137,7 @@ export async function POST(req: Request) {
         owner: repoFullName.split('/')[0],
         repo: repoFullName.split('/')[1],
         issue_number: prNumber,
-        body: `**PRDraft free tier limit reached** (${currentCount}/5 PRs used).\n\nUpgrade to Pro for unlimited PR descriptions → [prdraft.carrd.co](https://prdraft.carrd.co)`,
+        body: `**PRDraft free tier limit reached** (${currentCount}/5 PRs used).\n\nUpgrade to Pro for unlimited PR descriptions → [View your dashboard](https://prdraft-app.vercel.app/dashboard?installation_id=${installationId})`,
       })
       return Response.json({ ok: true, capped: true })
     }
