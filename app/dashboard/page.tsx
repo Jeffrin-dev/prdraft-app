@@ -862,7 +862,7 @@ export default async function DashboardPage({
 }) {
   const params = await searchParams
   const rawId = params.installation_id
-  const upgraded = params.upgraded === 'true'
+  const upgraded = params.upgraded === 'true' && install.plan === 'pro'
 
   if (!rawId) return <NoInstallation />
 
