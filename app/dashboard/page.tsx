@@ -26,6 +26,7 @@ type Install = {
   status: string
   installed_at: string
   uninstalled_at: string | null
+  paddle_subscription_id: string | null  
 }
 
 type PREvent = {
@@ -65,6 +66,23 @@ function formatDate(isoString: string): string {
     day: 'numeric',
     year: 'numeric',
   })
+}
+
+async function getNextBillingDate(subscriptionId: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://api.paddle.com/subscriptions/${subscriptionId}`, {
+      headers: { 'Authorization': `Bearer ${process.env.PADDLE_API_KEY}` },
+      next: { revalidate: 3600 }, // cache for 1 hour
+    })
+    const data = await res.json()
+    const raw = data?.data?.next_billed_at
+    if (!raw) return null
+    return new Date(raw).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+    })
+  } catch {
+    return null
+  }
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -155,10 +173,12 @@ function Dashboard({
   install,
   recentPRs,
   upgraded,
+  nextBillingDate,
 }: {
   install: Install
   recentPRs: PREvent[]
   upgraded: boolean
+  nextBillingDate: string | null
 }) {
   const prCount = install.pr_count ?? 0
   const isPro = install.plan === 'pro'
@@ -329,6 +349,9 @@ function Dashboard({
           <InfoRow label="Type" value={install.account_type} />
           <InfoRow label="Installation ID" value={String(install.installation_id)} mono />
           <InfoRow label="Plan" value={install.plan === 'pro' ? 'Pro ($9/mo)' : 'Free (5 PRs/month)'} />
+          {isPro && nextBillingDate && (
+            <InfoRow label="Next billing" value={`${nextBillingDate} · auto-renews`} />
+          )}
           <InfoRow label="Installed" value={formatDate(install.installed_at)} />
           <InfoRow label="Status" value={install.status} />
         </div>
@@ -891,6 +914,10 @@ export default async function DashboardPage({
     .eq('installation_id', installationId)
     .order('generated_at', { ascending: false })
     .limit(10)
+ 
+  const nextBillingDate = install.paddle_subscription_id
+    ? await getNextBillingDate(install.paddle_subscription_id)
+    : null
 
-  return <Dashboard install={install} recentPRs={recentPRs ?? []} upgraded={upgraded} />
+return <Dashboard install={install} recentPRs={recentPRs ?? []} upgraded={upgraded} nextBillingDate={nextBillingDate} />
 }
