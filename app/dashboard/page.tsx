@@ -13,6 +13,7 @@
 import { createClient } from '@supabase/supabase-js'
 import UpgradeButton from './UpgradeButton'
 import { notFound } from 'next/navigation'
+import CancelButton from './CancelButton'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -331,6 +332,12 @@ function Dashboard({
           <InfoRow label="Installed" value={formatDate(install.installed_at)} />
           <InfoRow label="Status" value={install.status} />
         </div>
+        {/* Cancel subscription — Pro users only */}
+        {isPro && (
+          <div style={{ marginTop: 12, textAlign: 'right' }}>
+            <CancelButton installationId={install.installation_id} />
+          </div>
+        )}
       </div>
     </Shell>
   )
