@@ -3,9 +3,7 @@
 import { useEffect } from 'react'
 
 declare global {
-  interface Window {
-    Paddle: any
-  }
+  interface Window { Paddle: any }
 }
 
 const PRICE_ID = 'pri_01knnrvdjr8gch5t25ys4st725'
@@ -14,32 +12,32 @@ const CLIENT_TOKEN = 'live_4d2e98f3ce38116ab471ce559b3'
 export default function UpgradeButton({
   installationId,
   urgent,
+  email,
 }: {
   installationId: number
   urgent: boolean
+  email?: string
 }) {
   useEffect(() => {
+    if (window.Paddle) return
     const script = document.createElement('script')
     script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js'
     script.async = true
     script.onload = () => {
       window.Paddle.Initialize({
         token: CLIENT_TOKEN,
-        eventCallback: (event: any) => {
-          if (event.name === 'checkout.completed') {
-            window.location.href = `/dashboard?installation_id=${installationId}&upgraded=true`
-          }
-        },
+        environment: 'production',
       })
     }
     document.head.appendChild(script)
-  }, [installationId])
+  }, [])
 
   function handleUpgrade() {
     if (!window.Paddle) return
     window.Paddle.Checkout.open({
       items: [{ priceId: PRICE_ID, quantity: 1 }],
       customData: { installation_id: String(installationId) },
+      ...(email ? { customer: { email } } : {}),
     })
   }
 
