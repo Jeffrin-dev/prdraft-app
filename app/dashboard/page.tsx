@@ -268,12 +268,7 @@ function Dashboard({
                 : 'Unlimited PR descriptions, priority support. $9/month.'}
             </p>
           </div>
-          <a
-            href={`/api/checkout?installation_id=${install.installation_id}`}
-            style={isAtCap ? styles.upgradeButtonUrgent : styles.upgradeButton}
-          >
-            Upgrade — $9/mo →
-          </a>
+          <UpgradeButton installationId={install.installation_id} urgent={isAtCap} email={install.account_login + '@users.noreply.github.com'} />
         </div>
       )}
 
