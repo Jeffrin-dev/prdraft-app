@@ -268,7 +268,7 @@ function Dashboard({
                 : 'Unlimited PR descriptions, priority support. $9/month.'}
             </p>
           </div>
-          <UpgradeButton installationId={install.installation_id} urgent={isAtCap} email={install.account_login + '@users.noreply.github.com'} />
+          <UpgradeButton installationId={install.installation_id} urgent={isAtCap} />
         </div>
       )}
 
