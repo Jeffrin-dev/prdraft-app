@@ -11,6 +11,7 @@
 // and renders the dashboard — no OAuth needed for v1.
 
 import { createClient } from '@supabase/supabase-js'
+import UpgradeButton from './UpgradeButton'
 import { notFound } from 'next/navigation'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
