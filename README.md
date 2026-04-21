@@ -59,3 +59,5 @@ After installing, view your usage and plan at [prdraft-app.vercel.app/dashboard]
 Recent activity now shows PR titles.
 
 Recent activity now shows PR titles.
+
+>Build for Team
