@@ -61,3 +61,4 @@ Recent activity now shows PR titles.
 Recent activity now shows PR titles.
 
 >Build for Team
+> Note: A daily ping cron job keeps the Supabase project active on the free tier.
