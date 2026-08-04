@@ -42,7 +42,7 @@ export default function TermsPage() {
 
             <section>
               <h2 style={{ fontSize: 18, fontWeight: 600, color: '#e2e8f0', marginBottom: 12 }}>3. Free Tier and Paid Plans</h2>
-              <p>PRDraft offers a free tier limited to 5 PR descriptions per month. Paid plans provide unlimited PR descriptions for $9 per month. Pricing may change with 30 days notice to existing subscribers.</p>
+              <p>PRDraft offers a free tier limited to 10 PR descriptions per month. Paid plans provide unlimited PR descriptions for $9 per month. Pricing may change with 30 days notice to existing subscribers.</p>
             </section>
 
             <section>

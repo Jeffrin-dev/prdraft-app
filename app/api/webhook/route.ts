@@ -130,28 +130,28 @@ export async function POST(req: Request) {
     const currentCount = install?.pr_count ?? 0
     const plan = install?.plan ?? 'free'
 
-    if (plan === 'free' && currentCount >= 5) {
+    if (plan === 'free' && currentCount >= 10) {
       console.log(`Free tier cap hit for installation ${installationId}`)
       const octokit = await app.getInstallationOctokit(installationId)
       await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
         owner: repoFullName.split('/')[0],
         repo: repoFullName.split('/')[1],
         issue_number: prNumber,
-        body: `**PRDraft free tier limit reached** (${currentCount}/5 PRs used).\n\nUpgrade to Pro for unlimited PR descriptions → [View your dashboard](https://prdraft-app.vercel.app/dashboard?installation_id=${installationId})`,
+        body: `**PRDraft free tier limit reached** (${currentCount}/10 PRs used).\n\nUpgrade to Pro for unlimited PR descriptions → [View your dashboard](https://prdraft-app.vercel.app/dashboard?installation_id=${installationId})`,
       })
       return Response.json({ ok: true, capped: true })
     }
     
     
     // Check cap BEFORE incrementing
-    if (plan === 'free' && currentCount >= 5) {
+    if (plan === 'free' && currentCount >= 10) {
       console.log(`Free tier cap hit for installation ${installationId}`)
       const octokit = await app.getInstallationOctokit(installationId)
       await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
         owner: repoFullName.split('/')[0],
         repo: repoFullName.split('/')[1],
         issue_number: prNumber,
-        body: `**PRDraft free tier limit reached** (${currentCount}/5 PRs used).\n\nUpgrade to Pro for unlimited PR descriptions → [View your dashboard](https://prdraft-app.vercel.app/dashboard?installation_id=${installationId})`,
+        body: `**PRDraft free tier limit reached** (${currentCount}/10 PRs used).\n\nUpgrade to Pro for unlimited PR descriptions → [View your dashboard](https://prdraft-app.vercel.app/dashboard?installation_id=${installationId})`,
       })
       return Response.json({ ok: true, capped: true })
     }

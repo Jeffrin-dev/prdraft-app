@@ -52,7 +52,7 @@ export default function PricingPage() {
 
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
                 {[
-                  '5 PR descriptions/month',
+                  '10 PR descriptions/month',
                   'Auto-generated from diff',
                   'Structured format',
                   '2-click GitHub install',
@@ -163,7 +163,7 @@ export default function PricingPage() {
               {[
                 {
                   q: 'How does the free tier work?',
-                  a: 'Install PRDraft on GitHub and you get 5 auto-generated PR descriptions per month at no cost. No credit card required.',
+                  a: 'Install PRDraft on GitHub and you get 10 auto-generated PR descriptions per month at no cost. No credit card required.',
                 },
                 {
                   q: 'What happens when I hit the free tier cap?',

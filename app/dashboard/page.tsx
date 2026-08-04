@@ -182,7 +182,7 @@ function Dashboard({
 }) {
   const prCount = install.pr_count ?? 0
   const isPro = install.plan === 'pro'
-  const cap = 5 // free tier cap
+  const cap = 10 // free tier cap
   const pct = isPro ? 100 : Math.min((prCount / cap) * 100, 100)
   const isAtCap = !isPro && prCount >= cap
   const isNearCap = !isPro && prCount >= cap - 1 && prCount < cap
@@ -227,7 +227,7 @@ function Dashboard({
         <StatCard
           label="Plan"
           value={isPro ? 'Pro' : 'Free'}
-          sub={isPro ? '$9 / month' : '5 PRs / month'}
+          sub={isPro ? '$9 / month' : '10 PRs / month'}
           accent={isPro ? '#a78bfa' : '#94a3b8'}
         />
         <StatCard
@@ -348,7 +348,7 @@ function Dashboard({
           <InfoRow label="Account" value={install.account_login} />
           <InfoRow label="Type" value={install.account_type} />
           <InfoRow label="Installation ID" value={String(install.installation_id)} mono />
-          <InfoRow label="Plan" value={install.plan === 'pro' ? 'Pro ($9/mo)' : 'Free (5 PRs/month)'} />
+          <InfoRow label="Plan" value={install.plan === 'pro' ? 'Pro ($9/mo)' : 'Free (10 PRs/month)'} />
           {isPro && nextBillingDate && (
             <InfoRow label="Next billing" value={`${nextBillingDate} · auto-renews`} />
           )}
