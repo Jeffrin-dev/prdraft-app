@@ -13,7 +13,7 @@ No CLI. No YAML config. No API keys to manage.
 
 ## Free tier
 
-5 PR descriptions/month — no credit card required.
+10 PR descriptions/month — no credit card required.
 
 Install at: [github.com/apps/prdraft](https://github.com/apps/prdraft)
 
