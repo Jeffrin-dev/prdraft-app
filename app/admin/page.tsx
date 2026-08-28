@@ -11,6 +11,7 @@ type Install = {
   account_type: string
   plan: 'free' | 'pro' | 'canceling'
   pr_count: number
+  actual_pr_count: number
   status: string
   installed_at: string
   uninstalled_at: string | null
@@ -57,13 +58,28 @@ export default async function AdminPage({
     .select('*')
     .order('installed_at', { ascending: false })
 
-  const all = (installs ?? []) as Install[]
+  const { data: usageRows } = await supabase
+    .from('pr_events')
+    .select('installation_id')
+
+  const usageByInstallation = new Map<number, number>()
+  for (const row of usageRows ?? []) {
+    usageByInstallation.set(
+      row.installation_id,
+      (usageByInstallation.get(row.installation_id) ?? 0) + 1
+    )
+  }
+
+  const all = ((installs ?? []) as Omit<Install, 'actual_pr_count'>[]).map(install => ({
+    ...install,
+    actual_pr_count: usageByInstallation.get(install.installation_id) ?? 0,
+  }))
 
   const totalInstalls = all.length
   const activeInstalls = all.filter(i => i.status === 'active').length
   const proUsers = all.filter(i => i.plan === 'pro').length
   const freeUsers = all.filter(i => i.plan === 'free' && i.status === 'active').length
-  const totalPRs = all.reduce((sum, i) => sum + (i.pr_count ?? 0), 0)
+  const totalPRs = all.reduce((sum, i) => sum + i.actual_pr_count, 0)
   const mrr = proUsers * 9
 
   return (
@@ -183,7 +199,7 @@ export default async function AdminPage({
                 }}>
                   {install.plan}
                 </span>
-                <span style={{ color: '#22d3ee', fontFamily: "'IBM Plex Mono', monospace" }}>{install.pr_count ?? 0}</span>
+                <span style={{ color: '#22d3ee', fontFamily: "'IBM Plex Mono', monospace" }}>{install.actual_pr_count}</span>
                 <span style={{ color: statusColor, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>
                   {install.status}
                 </span>
