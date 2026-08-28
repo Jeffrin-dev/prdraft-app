@@ -28,6 +28,13 @@ type LogContext = {
   prNumber?: number
 }
 
+type Install = {
+  installation_id: number
+  plan: 'free' | 'pro' | 'canceling'
+  status: string
+  pr_count: number | null
+}
+
 function logWebhookStep(step: string, context: LogContext, details: Record<string, unknown> = {}) {
   console.log('[webhook]', step, { ...context, ...details })
 }
@@ -71,11 +78,45 @@ Rules:
 - Keep it under 200 words total`
 
   const result = await groq.chat.completions.create({
-    model: "openai/gpt-oss-120b",
+    model: 'openai/gpt-oss-120b',
     messages: [{ role: 'user', content: prompt }],
     max_tokens: 500,
   })
   return result.choices[0]?.message?.content ?? ''
+}
+
+async function claimWebhookDelivery(deliveryId: string, context: LogContext) {
+  const { data, error } = await supabase
+    .from('webhook_deliveries')
+    .upsert(
+      { delivery_id: deliveryId, status: 'processing' },
+      { onConflict: 'delivery_id', ignoreDuplicates: true }
+    )
+    .select('delivery_id')
+
+  if (error) {
+    console.error('[webhook] delivery claim failed', { ...context, error })
+    throw new Error('Delivery claim failed')
+  }
+
+  return Boolean(data?.length)
+}
+
+async function markWebhookDelivery(deliveryId: string, status: 'done' | 'failed') {
+  await supabase
+    .from('webhook_deliveries')
+    .update({ status, completed_at: new Date().toISOString() })
+    .eq('delivery_id', deliveryId)
+}
+
+async function getActualPrCount(installationId: number) {
+  const { count, error } = await supabase
+    .from('pr_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('installation_id', installationId)
+
+  if (error) throw error
+  return count ?? 0
 }
 
 export async function GET() {
@@ -92,6 +133,11 @@ export async function POST(req: Request) {
 
   logWebhookStep('received', context, { hasSignature: Boolean(signature), bodyLength: body.length })
 
+  if (!deliveryId) {
+    logWebhookExit('missing delivery id', context)
+    return Response.json({ error: 'Missing X-GitHub-Delivery header' }, { status: 400 })
+  }
+
   try {
     await app.webhooks.verifyAndReceive({
       id: deliveryId,
@@ -106,103 +152,94 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const payload = JSON.parse(body)
-  context.action = payload.action
-  context.installationId = payload.installation?.id
-  context.repoFullName = payload.repository?.full_name
-  context.prNumber = payload.pull_request?.number
-
-  if (event !== 'pull_request' && event !== 'installation') {
-    logWebhookExit('unsupported event', context)
-    return Response.json({ ok: true, skipped: true })
-  }
-  
-  if (event === 'installation') {
-    const installationId = payload.installation?.id
-    const accountLogin = payload.installation?.account?.login ?? 'unknown'
-    const accountType = payload.installation?.account?.type ?? 'User'
-
-    logWebhookStep('installation event', context, { accountLogin, accountType })
-
-    if (payload.action === 'created') {
-      const { error } = await supabase.from('installs').upsert({
-        installation_id: installationId,
-        account_login: accountLogin,
-        account_type: accountType,
-        plan: 'free',
-        pr_count: 0,
-        status: 'active',
-        installed_at: new Date().toISOString(),
-        uninstalled_at: null,
-      })
-
-      if (error) {
-        console.error('[webhook] install upsert failed', { ...context, accountLogin, error })
-        return Response.json({ error: 'Install upsert failed' }, { status: 500 })
-      }
-
-      logWebhookExit('installation recorded', context, { accountLogin })
-      return Response.json({ ok: true, event: 'installed' })
+  try {
+    const claimed = await claimWebhookDelivery(deliveryId, context)
+    if (!claimed) {
+      logWebhookExit('duplicate delivery', context)
+      return Response.json({ ok: true, skipped: 'duplicate delivery' })
     }
-
-    if (payload.action === 'deleted') {
-      const { error } = await supabase.from('installs').update({
-        status: 'uninstalled',
-        uninstalled_at: new Date().toISOString(),
-      }).eq('installation_id', installationId)
-
-      if (error) {
-        console.error('[webhook] uninstall update failed', { ...context, accountLogin, error })
-        return Response.json({ error: 'Uninstall update failed' }, { status: 500 })
-      }
-
-      logWebhookExit('installation marked uninstalled', context, { accountLogin })
-      return Response.json({ ok: true, event: 'uninstalled' })
-    }
-
-    logWebhookExit('unsupported installation action', context)
-    return Response.json({ ok: true, skipped: 'unsupported installation action' })
-  }
-  
-  const installationId = payload.installation?.id
-  const repoFullName = payload.repository?.full_name
-  const prNumber = payload.pull_request?.number
-  const prTitle = payload.pull_request?.title ?? 'Untitled PR'
-
-  if (!installationId || !repoFullName || !prNumber) {
-    logWebhookExit('missing required pull_request fields', context, {
-      hasInstallationId: Boolean(installationId),
-      hasRepoFullName: Boolean(repoFullName),
-      hasPrNumber: Boolean(prNumber),
-    })
-    return Response.json({ error: 'Missing fields' }, { status: 400 })
+  } catch {
+    return Response.json({ error: 'Delivery claim failed' }, { status: 500 })
   }
 
   try {
+    const payload = JSON.parse(body)
+    context.action = payload.action
+    context.installationId = payload.installation?.id
+    context.repoFullName = payload.repository?.full_name
+    context.prNumber = payload.pull_request?.number
+
+    if (event !== 'pull_request' && event !== 'installation') {
+      logWebhookExit('unsupported event', context)
+      await markWebhookDelivery(deliveryId, 'done')
+      return Response.json({ ok: true, skipped: true })
+    }
+
+    if (event === 'installation') {
+      const installationId = payload.installation?.id
+      const accountLogin = payload.installation?.account?.login ?? 'unknown'
+      const accountType = payload.installation?.account?.type ?? 'User'
+
+      logWebhookStep('installation event', context, { accountLogin, accountType })
+
+      if (payload.action === 'created') {
+        const { error } = await supabase.from('installs').upsert({
+          installation_id: installationId,
+          account_login: accountLogin,
+          account_type: accountType,
+          plan: 'free',
+          pr_count: 0,
+          status: 'active',
+          installed_at: new Date().toISOString(),
+          uninstalled_at: null,
+        })
+
+        if (error) throw error
+        await markWebhookDelivery(deliveryId, 'done')
+        logWebhookExit('installation recorded', context, { accountLogin })
+        return Response.json({ ok: true, event: 'installed' })
+      }
+
+      if (payload.action === 'deleted') {
+        const { error } = await supabase.from('installs').update({
+          status: 'uninstalled',
+          uninstalled_at: new Date().toISOString(),
+        }).eq('installation_id', installationId)
+
+        if (error) throw error
+        await markWebhookDelivery(deliveryId, 'done')
+        logWebhookExit('installation marked uninstalled', context, { accountLogin })
+        return Response.json({ ok: true, event: 'uninstalled' })
+      }
+
+      await markWebhookDelivery(deliveryId, 'done')
+      logWebhookExit('unsupported installation action', context)
+      return Response.json({ ok: true, skipped: 'unsupported installation action' })
+    }
+
+    const installationId = payload.installation?.id
+    const repoFullName = payload.repository?.full_name
+    const prNumber = payload.pull_request?.number
+    const prTitle = payload.pull_request?.title ?? 'Untitled PR'
+
+    if (!installationId || !repoFullName || !prNumber) {
+      logWebhookExit('missing required pull_request fields', context)
+      await markWebhookDelivery(deliveryId, 'failed')
+      return Response.json({ error: 'Missing fields' }, { status: 400 })
+    }
+
     logWebhookStep('loading install', context)
     const { data: install, error: installError } = await supabase
       .from('installs')
-      .select('*')
+      .select('installation_id,plan,status,pr_count')
       .eq('installation_id', installationId)
-      .maybeSingle()
+      .maybeSingle<Install>()
 
-    if (installError) {
-      console.error('[webhook] install lookup failed', { ...context, error: installError })
-      return Response.json({ error: 'Install lookup failed' }, { status: 500 })
-    }
+    if (installError) throw installError
 
-    if (!install) {
-      logWebhookStep('install not found; using free defaults', context)
-    } else {
-      logWebhookStep('install loaded', context, {
-        plan: install.plan,
-        prCount: install.pr_count,
-        status: install.status,
-      })
-    }
-
-    const currentCount = install?.pr_count ?? 0
+    const currentCount = await getActualPrCount(installationId)
     const plan = install?.plan ?? 'free'
+    logWebhookStep('install loaded', context, { plan, status: install?.status, actualPrCount: currentCount })
 
     if (plan === 'free' && currentCount >= FREE_TIER_PR_LIMIT) {
       logWebhookStep('free tier cap hit', context, { currentCount, limit: FREE_TIER_PR_LIMIT })
@@ -214,6 +251,7 @@ export async function POST(req: Request) {
         issue_number: prNumber,
         body: `**PRDraft free tier limit reached** (${currentCount}/${FREE_TIER_PR_LIMIT} PRs used).\n\nUpgrade to Pro for unlimited PR descriptions → [View your dashboard](https://prdraft-app.vercel.app/dashboard?installation_id=${installationId})`,
       })
+      await markWebhookDelivery(deliveryId, 'done')
       logWebhookExit('free tier capped', context, { currentCount, limit: FREE_TIER_PR_LIMIT })
       return Response.json({ ok: true, capped: true })
     }
@@ -227,25 +265,11 @@ export async function POST(req: Request) {
       .eq('pr_number', prNumber)
       .maybeSingle()
 
-    if (existingError) {
-      console.error('[webhook] duplicate lookup failed', { ...context, error: existingError })
-      return Response.json({ error: 'Duplicate lookup failed' }, { status: 500 })
-    }
-
+    if (existingError) throw existingError
     if (existing) {
+      await markWebhookDelivery(deliveryId, 'done')
       logWebhookExit('already processed', context, { existingId: existing.id })
       return Response.json({ ok: true, skipped: 'already processed' })
-    }
-
-    logWebhookStep('incrementing install usage', context, { from: currentCount, to: currentCount + 1 })
-    const { error: incrementError } = await supabase
-      .from('installs')
-      .update({ pr_count: currentCount + 1 })
-      .eq('installation_id', installationId)
-
-    if (incrementError) {
-      console.error('[webhook] usage increment failed', { ...context, error: incrementError })
-      return Response.json({ error: 'Usage increment failed' }, { status: 500 })
     }
 
     logWebhookStep('creating installation octokit', context)
@@ -253,20 +277,18 @@ export async function POST(req: Request) {
     const { owner, repo } = repoParts(repoFullName)
 
     logWebhookStep('fetching PR diff from GitHub', context)
-    const { data: diffData } = await octokit.request(
-      'GET /repos/{owner}/{repo}/pulls/{pull_number}',
-      {
-        owner,
-        repo,
-        pull_number: prNumber,
-        headers: { accept: 'application/vnd.github.v3.diff' },
-      }
-    )
+    const { data: diffData } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
+      owner,
+      repo,
+      pull_number: prNumber,
+      headers: { accept: 'application/vnd.github.v3.diff' },
+    })
 
     const diff = diffData as unknown as string
     logWebhookStep('diff fetched', context, { diffLength: diff?.length ?? 0 })
 
     if (!diff || diff.length < 10) {
+      await markWebhookDelivery(deliveryId, 'done')
       logWebhookExit('empty diff', context, { diffLength: diff?.length ?? 0 })
       return Response.json({ ok: true, skipped: 'empty diff' })
     }
@@ -276,37 +298,29 @@ export async function POST(req: Request) {
     logWebhookStep('Groq completed', context, { descriptionLength: description.length })
 
     logWebhookStep('updating PR body on GitHub', context)
-    await octokit.request(
-      'PATCH /repos/{owner}/{repo}/pulls/{pull_number}',
-      {
-        owner,
-        repo,
-        pull_number: prNumber,
-        body: description + `\n\n---\nGenerated by [PRDraft](https://prdraft.carrd.co) · [View your dashboard](https://prdraft-app.vercel.app/dashboard?installation_id=${installationId})`,
-      }
-    )
+    await octokit.request('PATCH /repos/{owner}/{repo}/pulls/{pull_number}', {
+      owner,
+      repo,
+      pull_number: prNumber,
+      body: description + `\n\n---\nGenerated by [PRDraft](https://prdraft.carrd.co) · [View your dashboard](https://prdraft-app.vercel.app/dashboard?installation_id=${installationId})`,
+    })
 
-    logWebhookStep('recording pr_event', context)
-    const { error: recordError } = await supabase.from('pr_events').upsert(
-      {
-        installation_id: installationId,
-        repo_full_name: repoFullName,
-        pr_number: prNumber,
-        pr_title: prTitle,
-      },
-      { onConflict: 'installation_id,pr_number', ignoreDuplicates: true }
-    )
+    logWebhookStep('recording pr_event and incrementing usage atomically', context)
+    const { data: recordResult, error: recordError } = await supabase.rpc('record_pr_event_and_increment', {
+      p_installation_id: installationId,
+      p_repo_full_name: repoFullName,
+      p_pr_number: prNumber,
+      p_pr_title: prTitle,
+    })
 
-    if (recordError) {
-      console.error('[webhook] pr_event record failed', { ...context, error: recordError })
-      return Response.json({ error: 'PR event record failed' }, { status: 500 })
-    }
+    if (recordError) throw recordError
 
-    logWebhookExit('generated description', context)
+    await markWebhookDelivery(deliveryId, 'done')
+    logWebhookExit('generated description', context, { recordResult })
     return Response.json({ ok: true })
-
   } catch (err) {
-    console.error('[webhook] error processing PR', { ...context, err })
+    console.error('[webhook] error processing webhook', { ...context, err })
+    await markWebhookDelivery(deliveryId, 'failed')
     logWebhookExit('internal error', context)
     return Response.json({ error: 'Internal error' }, { status: 500 })
   }
